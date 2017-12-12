@@ -30,14 +30,10 @@ namespace ExtendBeamsToBeam
 
 				try
 				{
-					Operation.DisplayPrompt("Select beams to extend to beam");
-
-					var selected = picker.PickObjects(Picker.PickObjectsEnum.PICK_N_PARTS);
+					var selected = picker.PickObjects(Picker.PickObjectsEnum.PICK_N_PARTS, "Select beams to extend to beam");
 					if (selected.GetSize() < 1) return;
 
-					Operation.DisplayPrompt("Select beam");
-
-					var pickedBeam = picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART) as Beam;
+					var pickedBeam = picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Select beam") as Beam;
 					if (pickedBeam == null) return;
 
 					var coordSystem = pickedBeam.GetCoordinateSystem();
