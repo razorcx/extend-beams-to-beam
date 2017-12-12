@@ -28,49 +28,69 @@ namespace ExtendBeamsToBeam
 				var model = new Model();
 				var picker = new Picker();
 
-				try
+				Console.WriteLine("Select extend to beam");
+
+				var extendToBeam = picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Select beam") as Beam;
+				if (extendToBeam == null) return;
+
+				Console.WriteLine("Extend To beam");
+				Writeline(extendToBeam);
+
+				var keepGoing = true;
+				do
 				{
-					var selected = picker.PickObjects(Picker.PickObjectsEnum.PICK_N_PARTS, "Select beams to extend to beam");
-					if (selected.GetSize() < 1) return;
-
-					var pickedBeam = picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Select beam") as Beam;
-					if (pickedBeam == null) return;
-
-					var coordSystem = pickedBeam.GetCoordinateSystem();
-					var intersectionPlane = new GeometricPlane(coordSystem.Origin, coordSystem.AxisX,
-						new Vector(0, 0, 1));
-
-					Operation.DisplayPrompt("Beams are being extended/trimmed to the beam");
-
-					while (selected.MoveNext())
+					try
 					{
-						var beam = selected.Current as Beam;
-						if (beam == null) continue;
+						Console.WriteLine("Select beam to be extended");
 
-						var beamLine = new Line(beam.StartPoint, beam.EndPoint);
+						var beamToExtend = picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Select beam to extend to beam") as Beam;
+						if (beamToExtend == null) return;
+
+						var coordSystem = extendToBeam.GetCoordinateSystem();
+						var intersectionPlane = new GeometricPlane(coordSystem.Origin, coordSystem.AxisX,
+							new Vector(0, 0, 1));
+
+						Operation.DisplayPrompt("Beams are being extended/trimmed to the beam");
+
+						var beamLine = new Line(beamToExtend.StartPoint, beamToExtend.EndPoint);
 						var intersectPoint = Intersection.LineToPlane(beamLine, intersectionPlane);
-						if(intersectPoint == null) continue;
+						if (intersectPoint == null) return;
 
-						var startDist = Distance.PointToPoint(intersectPoint, beam.StartPoint);
-						var endDist = Distance.PointToPoint(intersectPoint, beam.EndPoint);
+						var startDist = Distance.PointToPoint(intersectPoint, beamToExtend.StartPoint);
+						var endDist = Distance.PointToPoint(intersectPoint, beamToExtend.EndPoint);
 
 						if (startDist <= endDist)
-							beam.StartPoint = intersectPoint;
+							beamToExtend.StartPoint = intersectPoint;
 						else
-							beam.EndPoint = intersectPoint;
+							beamToExtend.EndPoint = intersectPoint;
 
-						beam.Modify();
+						if (beamToExtend.Modify())
+						{
+							if (model.CommitChanges())
+							{
+								Operation.DisplayPrompt("Beams have been extended/trimmed to the beam");
+
+								Writeline(beamToExtend);
+							}
+						}
 					}
-
-					Operation.DisplayPrompt("Beams have been extended/trimmed to the beam");
-				}
-				catch (Exception ex)
-				{
-					
-				}
-
-				model.CommitChanges();
+					catch (Exception ex) 
+					{
+						keepGoing = false;
+						Console.WriteLine("Extend command terminated");
+						Console.WriteLine("Press any key to continue ...");
+						Console.ReadKey();
+					}
+				} while (keepGoing);
 			}
+		}
+
+		private static void Writeline(Beam beam)
+		{
+			Console.WriteLine($"Id: {beam.Identifier.ID}, " +
+			                  $"Name: {beam.Name}, " +
+			                  $"Profile: {beam.Profile.ProfileString}, " +
+			                  $"Material: {beam.Material.MaterialString}");
 		}
 	}
 }
